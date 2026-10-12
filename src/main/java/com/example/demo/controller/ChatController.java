@@ -1,14 +1,11 @@
 package com.example.demo.controller;
 
+import com.example.demo.ai.SessionAssistantFactory;
 import com.example.demo.service.ChatModelRegistry;
-import com.example.demo.service.ChatMemoryService;
 import dev.langchain4j.data.message.AiMessage;
 import dev.langchain4j.data.message.ChatMessage;
 import dev.langchain4j.data.message.SystemMessage;
 import dev.langchain4j.data.message.UserMessage;
-import dev.langchain4j.model.chat.ChatModel;
-import dev.langchain4j.model.chat.request.ChatRequest;
-import dev.langchain4j.model.chat.response.ChatResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -26,21 +23,19 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * 大模型对话接口（多轮记忆 + 多 provider 切换）
+ * 大模型对话接口（基于 LangChain4j AiServices 高层 API）
+ * 支持多 provider 切换 + 按 sessionId 自动记忆管理
  */
 @RestController
 @RequestMapping("/api/chat")
 public class ChatController {
 
+    private final SessionAssistantFactory assistantFactory;
     private final ChatModelRegistry modelRegistry;
-    private final ChatMemoryService memoryService;
 
-    private static final String SYSTEM_PROMPT =
-            "你是一个友好的 AI 助手，请根据对话上下文自然地回复用户。";
-
-    public ChatController(ChatModelRegistry modelRegistry, ChatMemoryService memoryService) {
+    public ChatController(SessionAssistantFactory assistantFactory, ChatModelRegistry modelRegistry) {
+        this.assistantFactory = assistantFactory;
         this.modelRegistry = modelRegistry;
-        this.memoryService = memoryService;
     }
 
     // ---- 请求 / 响应 DTO ----
@@ -67,26 +62,13 @@ public class ChatController {
                 ? request.sessionId()
                 : "default";
         String provider = modelRegistry.resolve(request.provider());
-        ChatModel chatModel = modelRegistry.get(provider);
 
-        // 1. 将用户消息写入记忆
-        memoryService.addUserMessage(sessionId, request.message());
+        // 从工厂获取 Assistant 代理实例（自动携带该会话的 ChatMemory）
+        var assistant = assistantFactory.getAssistant(provider, sessionId);
 
-        // 2. 组装带历史的请求（System prompt + 会话历史）
-        List<ChatMessage> messages = new ArrayList<>();
-        messages.add(SystemMessage.from(SYSTEM_PROMPT));
-        messages.addAll(memoryService.getMessages(sessionId));
-
-        ChatRequest chatReq = ChatRequest.builder()
-                .messages(messages)
-                .build();
-
-        // 3. 调用大模型
-        ChatResponse response = chatModel.chat(chatReq);
-        String reply = response.aiMessage().text();
-
-        // 4. 将 AI 回复写入记忆
-        memoryService.addAiMessage(sessionId, reply);
+        // 直接调用 AiService 接口方法，LangChain4j 自动处理：
+        // SystemMessage 注入 → ChatMemory 历史拼接 → 调用 ChatModel → 返回 String
+        String reply = assistant.chat(request.message());
 
         return new ChatResponseDto(sessionId, provider, reply);
     }
@@ -116,13 +98,16 @@ public class ChatController {
     }
 
     /**
-     * GET /api/chat/history/{sessionId} — 查看会话历史
+     * GET /api/chat/history/{sessionId} — 查看指定会话的对话历史
+     * 返回的即模型实际收到的上下文（system 提示词 + 用户消息 + AI 回复）
      */
     @GetMapping("/history/{sessionId}")
-    public List<HistoryItem> getHistory(@PathVariable String sessionId) {
+    public List<HistoryItem> history(@PathVariable String sessionId) {
         List<HistoryItem> result = new ArrayList<>();
-        for (ChatMessage msg : memoryService.getMessages(sessionId)) {
-            if (msg instanceof UserMessage um) {
+        for (ChatMessage msg : assistantFactory.getHistory(sessionId)) {
+            if (msg instanceof SystemMessage sm) {
+                result.add(new HistoryItem("system", sm.text()));
+            } else if (msg instanceof UserMessage um) {
                 result.add(new HistoryItem("user", um.singleText()));
             } else if (msg instanceof AiMessage am) {
                 result.add(new HistoryItem("assistant", am.text()));
@@ -136,7 +121,7 @@ public class ChatController {
      */
     @DeleteMapping("/history/{sessionId}")
     public Map<String, String> clearHistory(@PathVariable String sessionId) {
-        memoryService.clear(sessionId);
+        assistantFactory.clearSession(sessionId);
         return Map.of("status", "cleared", "sessionId", sessionId);
     }
 
@@ -145,7 +130,7 @@ public class ChatController {
      */
     @DeleteMapping("/history")
     public Map<String, String> clearAllHistory() {
-        memoryService.clearAll();
+        assistantFactory.clearAll();
         return Map.of("status", "all_cleared");
     }
 
