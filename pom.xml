@@ -51,10 +51,29 @@
             <artifactId>langchain4j-open-ai</artifactId>
         </dependency>
 
-        <!-- LangChain4j 主模块：提供 AiServices + MessageWindowChatMemory 等高层 API -->
+        <!-- LangChain4j 主模块：提供 AiServices + MessageWindowChatMemory + InMemoryEmbeddingStore 等 -->
         <dependency>
             <groupId>dev.langchain4j</groupId>
             <artifactId>langchain4j</artifactId>
+        </dependency>
+
+        <!-- LangChain4j Milvus 向量库接入（1.x 中 milvus 模块独立于主 BOM 版本线） -->
+        <dependency>
+            <groupId>dev.langchain4j</groupId>
+            <artifactId>langchain4j-milvus</artifactId>
+            <version>1.22.0-beta32</version>
+        </dependency>
+
+        <!-- 进程内中文嵌入模型（BGE-small-zh ONNX，无需外部服务，维度 512），版本由 BOM 管理 -->
+        <dependency>
+            <groupId>dev.langchain4j</groupId>
+            <artifactId>langchain4j-embeddings-bge-small-zh-v15</artifactId>
+        </dependency>
+
+        <!-- Tika 文档解析器：一个依赖覆盖 txt/md/pdf/docx/pptx/html 等格式，版本由 BOM 管理 -->
+        <dependency>
+            <groupId>dev.langchain4j</groupId>
+            <artifactId>langchain4j-document-parser-apache-tika</artifactId>
         </dependency>
 
         <dependency>
