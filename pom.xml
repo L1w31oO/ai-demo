@@ -45,6 +45,12 @@
             <artifactId>langchain4j-ollama</artifactId>
         </dependency>
 
+        <!-- LangChain4j OpenAI 兼容接入（覆盖 ChatGPT / DeepSeek / Qwen 兼容模式） -->
+        <dependency>
+            <groupId>dev.langchain4j</groupId>
+            <artifactId>langchain4j-open-ai</artifactId>
+        </dependency>
+
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>

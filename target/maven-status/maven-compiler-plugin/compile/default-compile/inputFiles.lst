@@ -1,4 +1,6 @@
 /Users/levy/Trae/ai-demo/src/main/java/com/example/demo/controller/ChatController.java
+/Users/levy/Trae/ai-demo/src/main/java/com/example/demo/service/ChatModelRegistry.java
+/Users/levy/Trae/ai-demo/src/main/java/com/example/demo/service/ChatMemoryService.java
 /Users/levy/Trae/ai-demo/src/main/java/com/example/demo/DemoApplication.java
 /Users/levy/Trae/ai-demo/src/main/java/com/example/demo/config/ChatModelConfig.java
 /Users/levy/Trae/ai-demo/src/main/java/com/example/demo/controller/HelloController.java
