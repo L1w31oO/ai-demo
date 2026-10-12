@@ -2,6 +2,7 @@ package com.example.demo.controller;
 
 import com.example.demo.ai.SessionAssistantFactory;
 import com.example.demo.service.ChatModelRegistry;
+import dev.langchain4j.guardrail.GuardrailException;
 import dev.langchain4j.data.message.AiMessage;
 import dev.langchain4j.data.message.ChatMessage;
 import dev.langchain4j.data.message.SystemMessage;
@@ -141,5 +142,12 @@ public class ChatController {
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public Map<String, String> handleIllegalArgument(IllegalArgumentException e) {
         return Map.of("error", e.getMessage());
+    }
+
+    /** 护栏拦截（输入/输出违规），返回 400 与拦截原因 */
+    @ExceptionHandler(GuardrailException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public Map<String, String> handleGuardrail(GuardrailException e) {
+        return Map.of("error", e.getMessage(), "guardrail", "violation");
     }
 }

@@ -2,6 +2,7 @@ package com.example.demo.controller;
 
 import com.example.demo.ai.ToolAssistantFactory;
 import com.example.demo.service.ChatModelRegistry;
+import dev.langchain4j.guardrail.GuardrailException;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -66,5 +67,12 @@ public class ToolController {
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public Map<String, Object> handleBadRequest(IllegalArgumentException e) {
         return Map.of("error", e.getMessage());
+    }
+
+    /** 护栏拦截（输入/输出违规），返回 400 与拦截原因 */
+    @ExceptionHandler(GuardrailException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public Map<String, Object> handleGuardrail(GuardrailException e) {
+        return Map.of("error", e.getMessage(), "guardrail", "violation");
     }
 }
