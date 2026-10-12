@@ -1,9 +1,13 @@
 package com.example.demo.config;
 
+import com.example.demo.observability.LatencyMetricsListener;
 import com.example.demo.service.ChatModelRegistry;
+import dev.langchain4j.micrometer.metrics.listeners.MicrometerMetricsChatModelListener;
 import dev.langchain4j.model.chat.ChatModel;
+import dev.langchain4j.model.chat.listener.ChatModelListener;
 import dev.langchain4j.model.ollama.OllamaChatModel;
 import dev.langchain4j.model.openai.OpenAiChatModel;
+import io.micrometer.core.instrument.MeterRegistry;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -11,6 +15,7 @@ import org.springframework.util.StringUtils;
 
 import java.time.Duration;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -23,6 +28,20 @@ public class ChatModelConfig {
     private static final Duration TIMEOUT = Duration.ofSeconds(120);
     private static final double TEMPERATURE = 0.7;
 
+    /** Micrometer 指标监听器：记录调用耗时 / token 用量 / 错误（OTel gen_ai.* 指标） */
+    private final MicrometerMetricsChatModelListener metricsListener;
+    private final MeterRegistry meterRegistry;
+
+    public ChatModelConfig(MeterRegistry meterRegistry) {
+        this.meterRegistry = meterRegistry;
+        this.metricsListener = new MicrometerMetricsChatModelListener(meterRegistry);
+    }
+
+    /** 每个模型挂载：官方 token 指标监听器 + 自定义耗时指标监听器 */
+    private List<ChatModelListener> listeners(String provider) {
+        return List.of(metricsListener, new LatencyMetricsListener(meterRegistry, provider));
+    }
+
     /** Ollama 本地模型 */
     @Bean
     public ChatModel chatLanguageModel(
@@ -33,6 +52,7 @@ public class ChatModelConfig {
                 .modelName(modelName)
                 .temperature(TEMPERATURE)
                 .timeout(TIMEOUT)
+                .listeners(listeners("ollama"))
                 .build();
     }
 
@@ -71,6 +91,7 @@ public class ChatModelConfig {
                     .modelName(deepseekModel)
                     .temperature(TEMPERATURE)
                     .timeout(TIMEOUT)
+                    .listeners(listeners("deepseek"))
                     .build());
             descriptions.put("deepseek", "DeepSeek API（" + deepseekModel + "）");
         }
@@ -83,6 +104,7 @@ public class ChatModelConfig {
                     .modelName(qwenModel)
                     .temperature(TEMPERATURE)
                     .timeout(TIMEOUT)
+                    .listeners(listeners("qwen"))
                     .build());
             descriptions.put("qwen", "通义千问 API（" + qwenModel + "）");
         }
@@ -95,6 +117,7 @@ public class ChatModelConfig {
                     .modelName(openaiModel)
                     .temperature(TEMPERATURE)
                     .timeout(TIMEOUT)
+                    .listeners(listeners("openai"))
                     .build());
             descriptions.put("openai", "OpenAI ChatGPT API（" + openaiModel + "）");
         }

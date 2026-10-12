@@ -1,9 +1,11 @@
 com/example/demo/config/ChatModelConfig.class
+com/example/demo/guardrail/SensitiveInputGuardrail.class
 com/example/demo/config/RagConfig$BgeTokenCountEstimator.class
 com/example/demo/config/RagConfig.class
 com/example/demo/ai/ToolAssistantFactory.class
 com/example/demo/controller/ChatController.class
 com/example/demo/controller/ChatController$ChatRequestDto.class
+com/example/demo/guardrail/SafeOutputGuardrail.class
 com/example/demo/DemoApplication.class
 com/example/demo/controller/HelloController.class
 com/example/demo/controller/RagController.class
@@ -15,7 +17,10 @@ com/example/demo/ai/RagAssistant.class
 com/example/demo/controller/RagController$IngestRequest.class
 com/example/demo/ai/ToolAssistant.class
 com/example/demo/controller/ChatController$ChatResponseDto.class
+com/example/demo/guardrail/PiiMaskGuardrail.class
+com/example/demo/guardrail/GuardrailTextRules.class
 com/example/demo/ai/WeatherTool.class
+com/example/demo/observability/LatencyMetricsListener.class
 com/example/demo/ai/SessionAssistantFactory.class
 com/example/demo/controller/ChatController$HistoryItem.class
 com/example/demo/controller/ToolController.class

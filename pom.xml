@@ -76,6 +76,18 @@
             <artifactId>langchain4j-document-parser-apache-tika</artifactId>
         </dependency>
 
+        <!-- 可观测性：Micrometer 指标监听器（OTel GenAI 语义规范 gen_ai.* 指标），版本由 BOM 管理 -->
+        <dependency>
+            <groupId>dev.langchain4j</groupId>
+            <artifactId>langchain4j-micrometer-metrics</artifactId>
+        </dependency>
+
+        <!-- Actuator：暴露 /actuator/metrics 端点查看指标 -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
