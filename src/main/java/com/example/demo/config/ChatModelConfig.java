@@ -4,9 +4,12 @@ import com.example.demo.observability.LatencyMetricsListener;
 import com.example.demo.service.ChatModelRegistry;
 import dev.langchain4j.micrometer.metrics.listeners.MicrometerMetricsChatModelListener;
 import dev.langchain4j.model.chat.ChatModel;
+import dev.langchain4j.model.chat.StreamingChatModel;
 import dev.langchain4j.model.chat.listener.ChatModelListener;
 import dev.langchain4j.model.ollama.OllamaChatModel;
+import dev.langchain4j.model.ollama.OllamaStreamingChatModel;
 import dev.langchain4j.model.openai.OpenAiChatModel;
+import dev.langchain4j.model.openai.OpenAiStreamingChatModel;
 import io.micrometer.core.instrument.MeterRegistry;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -21,6 +24,7 @@ import java.util.Map;
 /**
  * 大模型配置：Ollama 本地模型 + DeepSeek / Qwen / OpenAI 远程 API
  * 远程 provider 仅在对应 API Key 已配置时注册
+ * 每个 provider 同时构建 同步 ChatModel + 流式 StreamingChatModel 两套实例
  */
 @Configuration
 public class ChatModelConfig {
@@ -42,26 +46,12 @@ public class ChatModelConfig {
         return List.of(metricsListener, new LatencyMetricsListener(meterRegistry, provider));
     }
 
-    /** Ollama 本地模型 */
-    @Bean
-    public ChatModel chatLanguageModel(
-            @Value("${ollama.base-url}") String baseUrl,
-            @Value("${ollama.model-name}") String modelName) {
-        return OllamaChatModel.builder()
-                .baseUrl(baseUrl)
-                .modelName(modelName)
-                .temperature(TEMPERATURE)
-                .timeout(TIMEOUT)
-                .listeners(listeners("ollama"))
-                .build();
-    }
-
-    /** 多模型注册表：Ollama + 远程 API（按需注册） */
+    /** 多模型注册表：Ollama + 远程 API（按需注册），同时构建同步 + 流式两套实例 */
     @Bean
     public ChatModelRegistry chatModelRegistry(
-            ChatModel chatLanguageModel,
             @Value("${chat.default-provider:ollama}") String defaultProvider,
 
+            @Value("${ollama.base-url}") String ollamaBaseUrl,
             @Value("${ollama.model-name}") String ollamaModel,
 
             @Value("${deepseek.api-key:}") String deepseekKey,
@@ -77,51 +67,65 @@ public class ChatModelConfig {
             @Value("${openai.model-name:gpt-4o-mini}") String openaiModel) {
 
         Map<String, ChatModel> models = new LinkedHashMap<>();
+        Map<String, StreamingChatModel> streamingModels = new LinkedHashMap<>();
         Map<String, String> descriptions = new LinkedHashMap<>();
 
-        // 本地 Ollama（始终可用）
-        models.put("ollama", chatLanguageModel);
+        // ---- 本地 Ollama（始终可用）----
+        models.put("ollama", OllamaChatModel.builder()
+                .baseUrl(ollamaBaseUrl)
+                .modelName(ollamaModel)
+                .temperature(TEMPERATURE)
+                .timeout(TIMEOUT)
+                .listeners(listeners("ollama"))
+                .build());
+        streamingModels.put("ollama", OllamaStreamingChatModel.builder()
+                .baseUrl(ollamaBaseUrl)
+                .modelName(ollamaModel)
+                .temperature(TEMPERATURE)
+                .timeout(TIMEOUT)
+                .listeners(listeners("ollama"))
+                .build());
         descriptions.put("ollama", "Ollama 本地模型（" + ollamaModel + "）");
 
-        // DeepSeek 远程 API（OpenAI 兼容）
+        // ---- DeepSeek 远程 API（OpenAI 兼容）----
         if (StringUtils.hasText(deepseekKey)) {
             models.put("deepseek", OpenAiChatModel.builder()
-                    .baseUrl(deepseekBaseUrl)
-                    .apiKey(deepseekKey)
-                    .modelName(deepseekModel)
-                    .temperature(TEMPERATURE)
-                    .timeout(TIMEOUT)
-                    .listeners(listeners("deepseek"))
-                    .build());
+                    .baseUrl(deepseekBaseUrl).apiKey(deepseekKey).modelName(deepseekModel)
+                    .temperature(TEMPERATURE).timeout(TIMEOUT)
+                    .listeners(listeners("deepseek")).build());
+            streamingModels.put("deepseek", OpenAiStreamingChatModel.builder()
+                    .baseUrl(deepseekBaseUrl).apiKey(deepseekKey).modelName(deepseekModel)
+                    .temperature(TEMPERATURE).timeout(TIMEOUT)
+                    .listeners(listeners("deepseek")).build());
             descriptions.put("deepseek", "DeepSeek API（" + deepseekModel + "）");
         }
 
-        // 通义千问远程 API（DashScope OpenAI 兼容模式）
+        // ---- 通义千问远程 API（DashScope OpenAI 兼容模式）----
         if (StringUtils.hasText(qwenKey)) {
             models.put("qwen", OpenAiChatModel.builder()
-                    .baseUrl(qwenBaseUrl)
-                    .apiKey(qwenKey)
-                    .modelName(qwenModel)
-                    .temperature(TEMPERATURE)
-                    .timeout(TIMEOUT)
-                    .listeners(listeners("qwen"))
-                    .build());
+                    .baseUrl(qwenBaseUrl).apiKey(qwenKey).modelName(qwenModel)
+                    .temperature(TEMPERATURE).timeout(TIMEOUT)
+                    .listeners(listeners("qwen")).build());
+            streamingModels.put("qwen", OpenAiStreamingChatModel.builder()
+                    .baseUrl(qwenBaseUrl).apiKey(qwenKey).modelName(qwenModel)
+                    .temperature(TEMPERATURE).timeout(TIMEOUT)
+                    .listeners(listeners("qwen")).build());
             descriptions.put("qwen", "通义千问 API（" + qwenModel + "）");
         }
 
-        // OpenAI ChatGPT 远程 API
+        // ---- OpenAI ChatGPT 远程 API ----
         if (StringUtils.hasText(openaiKey)) {
             models.put("openai", OpenAiChatModel.builder()
-                    .baseUrl(openaiBaseUrl)
-                    .apiKey(openaiKey)
-                    .modelName(openaiModel)
-                    .temperature(TEMPERATURE)
-                    .timeout(TIMEOUT)
-                    .listeners(listeners("openai"))
-                    .build());
+                    .baseUrl(openaiBaseUrl).apiKey(openaiKey).modelName(openaiModel)
+                    .temperature(TEMPERATURE).timeout(TIMEOUT)
+                    .listeners(listeners("openai")).build());
+            streamingModels.put("openai", OpenAiStreamingChatModel.builder()
+                    .baseUrl(openaiBaseUrl).apiKey(openaiKey).modelName(openaiModel)
+                    .temperature(TEMPERATURE).timeout(TIMEOUT)
+                    .listeners(listeners("openai")).build());
             descriptions.put("openai", "OpenAI ChatGPT API（" + openaiModel + "）");
         }
 
-        return new ChatModelRegistry(models, descriptions, defaultProvider);
+        return new ChatModelRegistry(models, streamingModels, descriptions, defaultProvider);
     }
 }

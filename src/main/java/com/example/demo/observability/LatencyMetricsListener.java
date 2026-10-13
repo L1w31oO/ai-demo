@@ -6,6 +6,7 @@ import dev.langchain4j.model.chat.listener.ChatModelRequestContext;
 import dev.langchain4j.model.chat.listener.ChatModelResponseContext;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.util.StringUtils;
 
 import java.util.concurrent.TimeUnit;
@@ -15,6 +16,7 @@ import java.util.concurrent.TimeUnit;
  * 官方 MicrometerMetricsChatModelListener（1.22.0-beta32）仅记录 token 用量，
  * 耗时指标由此监听器补充，指标名与标签和官方约定保持一致
  */
+@Slf4j
 public class LatencyMetricsListener implements ChatModelListener {
 
     public static final String METRIC_NAME = "gen_ai.client.operation.duration";
@@ -48,6 +50,10 @@ public class LatencyMetricsListener implements ChatModelListener {
             recordDuration(start, errorContext.chatRequest().modelName(),
                     errorContext.error().getClass().getSimpleName());
         }
+        log.warn("模型调用失败 provider={} model={} error={}",
+                providerName,
+                errorContext.chatRequest().modelName(),
+                errorContext.error().toString());
     }
 
     private void recordDuration(long startNanos, String modelName, String errorType) {

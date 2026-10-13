@@ -3,6 +3,7 @@
 /Users/levy/Trae/ai-demo/src/main/java/com/example/demo/ai/ToolAssistant.java
 /Users/levy/Trae/ai-demo/src/main/java/com/example/demo/guardrail/GuardrailTextRules.java
 /Users/levy/Trae/ai-demo/src/main/java/com/example/demo/config/RagConfig.java
+/Users/levy/Trae/ai-demo/src/main/java/com/example/demo/controller/StreamController.java
 /Users/levy/Trae/ai-demo/src/main/java/com/example/demo/ai/Assistant.java
 /Users/levy/Trae/ai-demo/src/main/java/com/example/demo/service/ChatModelRegistry.java
 /Users/levy/Trae/ai-demo/src/main/java/com/example/demo/ai/SessionAssistantFactory.java
