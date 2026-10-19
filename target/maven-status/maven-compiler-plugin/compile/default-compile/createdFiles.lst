@@ -7,7 +7,6 @@ com/example/demo/controller/ChatController.class
 com/example/demo/controller/ChatController$ChatRequestDto.class
 com/example/demo/guardrail/SafeOutputGuardrail.class
 com/example/demo/DemoApplication.class
-com/example/demo/controller/StreamController$1.class
 com/example/demo/controller/HelloController.class
 com/example/demo/controller/RagController.class
 com/example/demo/controller/RagController$RagChatResponse.class

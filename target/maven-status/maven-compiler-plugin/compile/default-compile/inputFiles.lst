@@ -6,9 +6,11 @@
 /Users/levy/Trae/ai-demo/src/main/java/com/example/demo/controller/StreamController.java
 /Users/levy/Trae/ai-demo/src/main/java/com/example/demo/ai/Assistant.java
 /Users/levy/Trae/ai-demo/src/main/java/com/example/demo/service/ChatModelRegistry.java
+/Users/levy/Trae/ai-demo/src/main/java/com/example/demo/ai/StreamAssistant.java
 /Users/levy/Trae/ai-demo/src/main/java/com/example/demo/ai/SessionAssistantFactory.java
 /Users/levy/Trae/ai-demo/src/main/java/com/example/demo/ai/WeatherTool.java
 /Users/levy/Trae/ai-demo/src/main/java/com/example/demo/observability/LatencyMetricsListener.java
+/Users/levy/Trae/ai-demo/src/main/java/com/example/demo/ai/StreamAssistantFactory.java
 /Users/levy/Trae/ai-demo/src/main/java/com/example/demo/DemoApplication.java
 /Users/levy/Trae/ai-demo/src/main/java/com/example/demo/controller/ToolController.java
 /Users/levy/Trae/ai-demo/src/main/java/com/example/demo/ai/RagAssistantFactory.java
